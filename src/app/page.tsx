@@ -1,69 +1,109 @@
-import Image from "next/image";
+"use client"
+import { useState } from "react"
+import { supabase } from "../lib/supabase"
 
 export default function Home() {
+  const [name, setName] = useState("")
+  const [lastName, setLastName] = useState("")
+  const [phone, setPhone] = useState("")
+  const [selectedDate, setSelectedDate] = useState("")
+  const [selectedTime, setSelectedTime] = useState("")
+  const [loading, setLoading] = useState(false)
+  const [success, setSuccess] = useState(false)
+
+  const horas = ["09:00","09:30","10:00","10:30","11:00","11:30","14:00","14:30","15:00","15:30","16:00","16:30","17:00","17:30","18:00","18:30","19:00","19:30"]
+
+  const getDates = () => {
+    const dates = []
+    for(let i=0;i<7;i++){
+      const d = new Date()
+      d.setDate(d.getDate()+i)
+      const iso = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`
+      const label = d.toLocaleDateString('es-AR',{weekday:'short', day:'2-digit'})
+      dates.push({iso, label})
+    }
+    return dates
+  }
+
+  const handleReserva = async () => {
+    if(!name ||!lastName ||!phone ||!selectedDate ||!selectedTime) {
+      alert("Completá nombre, apellido, número, fecha y hora")
+      return
+    }
+    setLoading(true)
+    const { error } = await supabase.from("appointments").insert([{
+      client_name: name,
+      client_lastname: lastName,
+      client_phone: phone,
+      date: selectedDate,
+      time: selectedTime,
+      status: 'pendiente',
+      service: 'Corte Premium'
+    }])
+    setLoading(false)
+    if(error) alert("Error: " + error.message)
+    else {
+      setSuccess(true)
+      setName(""); setLastName(""); setPhone(""); setSelectedDate(""); setSelectedTime("")
+      setTimeout(()=>setSuccess(false),4000)
+    }
+  }
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert h-5 w-[100px]"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the{" "}
-            <code className="rounded bg-black/[.06] px-1.5 py-0.5 font-mono text-[0.9em] dark:bg-white/[.08]">
-              page.tsx
-            </code>{" "}
-            file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+    <>
+      <style>{`@import url('https://fonts.googleapis.com/css2?family=Bodoni+Moda:opsz,wght@6..96,400&family=Inter:wght@400;600;700&display=swap');`}</style>
+      <div className="min-h-screen bg-[#151412] text-[#E8E2D6] px-5 py-8" style={{fontFamily:'Inter'}}>
+        <div className="max-w-[480px] mx-auto">
+
+          <p className="text-[#E6D5B8]/30 text-[10px] tracking-[0.4em] font-bold">RÍO CUARTO • ATELIER</p>
+          <h1 className="mt-3 text-[52px] leading-[0.9]" style={{fontFamily:'Bodoni Moda'}}>Tu turno,<br/><span className="italic text-[#E6D5B8] font-light">tu estilo.</span></h1>
+
+          {success && <div className="mt-6 bg-[#E6D5B8] text-black rounded-full px-5 py-3 text-sm font-bold text-center">✓ Turno reservado! Te esperamos.</div>}
+
+          <div className="mt-8 space-y-5">
+
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-[10px] tracking-widest text-white/30 font-bold ml-2">NOMBRE</label>
+                <input value={name} onChange={e=>setName(e.target.value)} placeholder="Juan" className="mt-2 w-full bg-[#1E1C1A] border border-white/5 rounded-full px-6 py-4 text-sm text-white outline-none focus:border-white/20 placeholder:text-white/20" />
+              </div>
+              <div>
+                <label className="text-[10px] tracking-widest text-white/30 font-bold ml-2">APELLIDO</label>
+                <input value={lastName} onChange={e=>setLastName(e.target.value)} placeholder="Perez" className="mt-2 w-full bg-[#1E1C1A] border border-white/5 rounded-full px-6 py-4 text-sm text-white outline-none focus:border-white/20 placeholder:text-white/20" />
+              </div>
+            </div>
+
+            <div>
+              <label className="text-[10px] tracking-widest text-white/30 font-bold ml-2">NÚMERO DE WHATSAPP</label>
+              <input value={phone} onChange={e=>setPhone(e.target.value)} placeholder="358 4123456" className="mt-2 w-full bg-[#1E1C1A] border border-white/5 rounded-full px-6 py-4 text-sm text-white outline-none focus:border-white/20 placeholder:text-white/20" />
+            </div>
+
+            <div>
+              <label className="text-[10px] tracking-widest text-white/30 font-bold ml-2">ELEGÍ FECHA</label>
+              <div className="flex gap-2 mt-3 overflow-x-auto pb-2">
+                {getDates().map(d=>(
+                  <button key={d.iso} onClick={()=>setSelectedDate(d.iso)} className={`min-w-[72px] py-3 rounded-full text-xs font-bold border transition-all ${selectedDate===d.iso? 'bg-[#E6D5B8] text-black border-[#E6D5B8]' : 'bg-[#1E1C1A] border-white/5 text-white/40'}`}>{d.label}<br/><span className="text-[10px] opacity-60">{d.iso.slice(5)}</span></button>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <label className="text-[10px] tracking-widest text-white/30 font-bold ml-2">ELEGÍ HORA</label>
+              <div className="grid grid-cols-4 gap-2 mt-3">
+                {horas.map(h=>(
+                  <button key={h} onClick={()=>setSelectedTime(h)} className={`py-3 rounded-full text-xs font-bold border transition-all ${selectedTime===h? 'bg-white text-black border-white' : 'bg-[#1E1C1A] border-white/5 text-white/40'}`}>{h}</button>
+                ))}
+              </div>
+            </div>
+
+            <button onClick={handleReserva} disabled={loading} className="w-full mt-6 bg-[#E6D5B8] text-black rounded-full py-5 font-bold tracking-widest text-sm">
+              {loading? 'RESERVANDO...' : 'RESERVAR TURNO • $18.500'}
+            </button>
+
+            <p className="text-center text-white/10 text-[10px] tracking-widest mt-4">CORTE PREMIUM • ATELIER BARBER</p>
+          </div>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert h-[14px] w-4"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={14}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
-    </div>
-  );
+      </div>
+    </>
+  )
 }
