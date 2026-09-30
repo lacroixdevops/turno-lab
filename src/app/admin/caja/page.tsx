@@ -32,10 +32,8 @@ export default function CajaDiaria() {
   async function borrarCaja() {
     const confirmar = confirm(`¿Seguro querés BORRAR toda la caja del día ${fecha}? Se van a borrar ${turnos.length} turnos. Esta acción no se puede deshacer.`)
     if(!confirmar) return
-
     const dobleConfirmar = prompt(`Escribí BORRAR para confirmar`)
     if(dobleConfirmar!== 'BORRAR') return
-
     const { error } = await supabase.from("appointments").delete().eq("date", fecha)
     if(error) alert("Error: " + error.message)
     else {
@@ -51,8 +49,8 @@ export default function CajaDiaria() {
   }
 
   return (
-    <div className="min-h-screen bg-[#151412] text-white p-5" style={{fontFamily:'Inter'}}>
-      <div className="max-w-[500px] mx-auto">
+    <div className="min-h-screen bg-[#151412] text-white p-5 flex flex-col justify-between" style={{fontFamily:'Inter'}}>
+      <div className="max-w-[500px] mx-auto w-full">
         <div className="flex justify-between items-center">
           <h1 className="text-3xl font-bold">Caja Diaria</h1>
           <a href="/admin" className="text-white/30 text-xs">← Admin</a>
@@ -102,6 +100,12 @@ export default function CajaDiaria() {
           }
         </div>
       </div>
+
+      {/* FOOTER */}
+      <footer className="w-full text-center py-8 mt-16 border-t border-white/5">
+        <p className="text-[10px] tracking-[0.3em] text-white/20 font-bold">ATELIER BARBER</p>
+        <p className="text-[10px] text-white/30 mt-2">© 2026 Atelier Barber. Todos los derechos reservados.</p>
+      </footer>
     </div>
   )
 }
