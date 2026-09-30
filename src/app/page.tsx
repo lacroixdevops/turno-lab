@@ -69,7 +69,19 @@ export default function Home() {
     }
   }
 
-  const horasDisponibles = horas.filter(h =>!ocupados.includes(h))
+  // FILTRO FINAL: ocupados + horarios pasados si es hoy
+  const horasDisponibles = horas.filter(h => {
+    if (ocupados.includes(h)) return false
+    const today = new Date()
+    const todayISO = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`
+    if (selectedDate === todayISO) {
+      const [hh, mm] = h.split(":").map(Number)
+      const horaTurno = hh * 60 + mm
+      const ahora = today.getHours() * 60 + today.getMinutes()
+      if (horaTurno <= ahora) return false
+    }
+    return true
+  })
 
   return (
     <>
@@ -120,8 +132,6 @@ export default function Home() {
             </div>
           </div>
         </div>
-
-        {/* FOOTER */}
         <footer className="w-full text-center py-8 border-t border-white/5">
           <p className="text-[10px] tracking-[0.3em] text-white/20 font-bold">ATELIER BARBER</p>
           <p className="text-[10px] text-white/30 mt-2">© 2026 Atelier Barber. Todos los derechos reservados.</p>
