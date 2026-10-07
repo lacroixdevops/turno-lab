@@ -1,95 +1,85 @@
 "use client"
+import { useState } from "react"
+
 export default function Presentacion() {
+  const wsp = "5493586021014" // <-- CAMBIA ESTE POR TU NUMERO
+  const precio = 15000
+
   return (
     <>
       <style>{`@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');`}</style>
       <div className="min-h-screen bg-[#F6F5F2] text-[#0A0A0A]" style={{fontFamily:'Inter'}}>
+        {/* HEADER */}
         <div className="w-full bg-[#0A0A0A] text-white">
-          <div className="max-w-[480px] mx-auto px-6 py-6 flex items-center justify-between">
-            <p className="text-[10px] tracking-[0.4em] font-black">ATELIER SYSTEM • RÍO CUARTO</p>
-            <a href="https://wa.me/5493586021014" className="text-[9px] font-black tracking-widest border border-white/10 rounded-full px-3 py-1.5">WSP</a>
+          <div className="max-w-[760px] mx-auto px-5 py-6 flex justify-between items-center">
+            <p className="text-[11px] tracking-[0.4em] font-black">TURNO LAB</p>
+            <a href={`https://wa.me/${wsp}?text=Hola! Quiero mi barberia online`} className="text-[10px] tracking-widest font-black bg-white text-black px-4 py-2 rounded-full">HABLAR POR WSP</a>
           </div>
         </div>
 
-        <div className="max-w-[480px] mx-auto px-6 py-10">
+        <div className="max-w-[760px] mx-auto px-5 py-10">
+          {/* HERO */}
+          <h1 className="text-[52px] leading-[0.85] font-black tracking-[-0.04em]">Dejá de perder<br/>turnos por<br/>WhatsApp<span className="font-light">.</span></h1>
+          <p className="mt-4 text-[15px] text-black/50 font-bold leading-relaxed max-w-[420px]">Tus clientes reservan solos 24/7. Vos solo cortás el pelo. Sin cuaderno, sin llamadas, sin líos. Como Atelier y Lacroix ya lo usan en Río Cuarto.</p>
 
-          <h1 className="text-[44px] leading-[0.85] font-black tracking-[-0.03em]">Tu negocio <br/><span className="font-light">trabaja solo.</span></h1>
-          <p className="text-black/40 text-[14px] mt-4 leading-relaxed font-semibold">Dejás de perder turnos por WhatsApp. El cliente reserva, vos solo atendés. Sistema probado en Atelier Barber.</p>
+          <div className="mt-6 flex gap-3">
+            <a href={`https://wa.me/${wsp}?text=Hola! Quiero mi barberia en TurnoLab por $${precio}/mes`} className="bg-[#0A0A0A] text-white rounded-full px-7 py-4 font-black text-sm tracking-widest shadow-[0_12px_24px_rgba(0,0,0,0.15)]">QUIERO MI BARBERIA →</a>
+            <a href="/b/atelier" target="_blank" className="bg-white border border-black/5 rounded-full px-7 py-4 font-black text-sm shadow-sm text-[#0A0A0A]">Ver demo</a>
+          </div>
 
-          {/* COMPARACION */}
-          <div className="grid grid-cols-2 gap-3 mt-8">
-            <div className="bg-white border border-black/5 rounded-[20px] p-4 shadow-sm">
-              <p className="text-[10px] text-red-400 font-black tracking-widest">ANTES</p>
-              <p className="text-xs text-black/40 mt-2 leading-relaxed font-bold">WhatsApp explotado<br/>Doble turno<br/>No sabés caja<br/>Cliente no viene</p>
-            </div>
-            <div className="bg-[#0A0A0A] rounded-[20px] p-4 text-white shadow-[0_12px_24px_rgba(0,0,0,0.15)]">
-              <p className="text-[10px] opacity-50 font-black tracking-widest">DESPUÉS</p>
-              <p className="text-xs mt-2 leading-relaxed font-bold">Reserva automática<br/>Hora bloqueada<br/>Caja calculada<br/>Aviso a tu WhatsApp</p>
+          {/* COMO FUNCIONA */}
+          <div className="mt-14">
+            <p className="text-[10px] tracking-[0.2em] text-black/30 font-black">COMO FUNCIONA</p>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mt-4">
+              <div className="bg-white border border-black/5 rounded-[24px] p-6 shadow-sm">
+                <p className="text-[40px] font-black leading-none">01</p>
+                <p className="font-black mt-3 text-[#0A0A0A]">Link propio</p>
+                <p className="text-[13px] text-black/40 font-bold mt-1">Te creamos /b/tu-barberia en 5 minutos. Lo mandás a tus clientes.</p>
+              </div>
+              <div className="bg-white border border-black/5 rounded-[24px] p-6 shadow-sm">
+                <p className="text-[40px] font-black leading-none">02</p>
+                <p className="font-black mt-3 text-[#0A0A0A]">Reservan solos</p>
+                <p className="text-[13px] text-black/40 font-bold mt-1">Eligen día y hora. No te pueden reservar 2 a la misma hora. Te llega WSP.</p>
+              </div>
+              <div className="bg-[#0A0A0A] rounded-[24px] p-6 text-white shadow-[0_12px_24px_rgba(0,0,0,0.15)]">
+                <p className="text-[40px] font-black leading-none">03</p>
+                <p className="font-black mt-3">Vos solo cobrás</p>
+                <p className="text-[13px] text-white/50 font-bold mt-1">Ves tu caja diaria, calendario con días llenos y agenda filtrada.</p>
+              </div>
             </div>
           </div>
 
-          {/* QUE INCLUYE */}
-          <div className="mt-6 bg-white border border-black/5 rounded-[24px] p-6 shadow-sm">
-            <p className="text-[10px] tracking-[0.2em] text-black/30 font-black">QUÉ TE ENTREGO (EN 48HS)</p>
+          {/* DEMO VIVO */}
+          <div className="mt-12 bg-white border border-black/5 rounded-[32px] p-7 shadow-sm">
+            <p className="text-[10px] tracking-[0.2em] text-black/30 font-black">DEMO REAL EN USO HOY</p>
             <div className="mt-4 space-y-3">
-              {[
-                "Página de reservas con tu logo y colores",
-                "Panel admin privado + caja diaria con calendario",
-                "QR para tu vidriera / Instagram",
-                "Link para bio de Instagram",
-                "Sin comisiones por turno"
-              ].map(t=>(
-                <div key={t} className="flex gap-3"><span className="w-5 h-5 rounded-full bg-[#0A0A0A] text-white flex items-center justify-center text-[10px] font-black">✓</span><p className="text-sm text-black/70 font-bold">{t}</p></div>
-              ))}
+              <div className="flex justify-between items-center bg-[#F6F5F2] rounded-full px-5 py-4 border border-black/5">
+                <div>
+                  <p className="font-black text-sm text-[#0A0A0A]">Atelier Barber</p>
+                  <p className="text-[11px] text-black/40 font-bold">/b/atelier • 59 días restantes</p>
+                </div>
+                <a href="/b/atelier" target="_blank" className="bg-[#0A0A0A] text-white rounded-full px-4 py-2 text-xs font-black">Ver Barbería</a>
+              </div>
+              <div className="flex justify-between items-center bg-[#F6F5F2] rounded-full px-5 py-4 border border-black/5">
+                <div>
+                  <p className="font-black text-sm text-[#0A0A0A]">Barbería Lacroix</p>
+                  <p className="text-[11px] text-black/40 font-bold">/b/barberia-lacroix • 59 días restantes</p>
+                </div>
+                <a href="/b/barberia-lacroix" target="_blank" className="bg-[#0A0A0A] text-white rounded-full px-4 py-2 text-xs font-black">Ver Barbería</a>
+              </div>
             </div>
           </div>
 
-          {/* PARA QUIEN */}
-          <div className="mt-6">
-            <p className="text-[10px] tracking-[0.2em] text-black/30 font-black">FUNCIONA PARA</p>
-            <div className="flex flex-wrap gap-2 mt-3">
-              {["Barberías","Peluquerías","Uñas","Pestañas","Centros estética","Tatuajes","Gym / Entrenadores"].map(r=>(
-                <span key={r} className="bg-white border border-black/5 rounded-full px-4 py-2 text-[11px] text-black/60 font-bold shadow-sm">{r}</span>
-              ))}
-            </div>
+          {/* PRECIO */}
+          <div className="mt-12 bg-[#0A0A0A] rounded-[32px] p-8 text-white text-center shadow-[0_20px_40px_rgba(0,0,0,0.2)]">
+            <p className="text-[10px] tracking-[0.4em] font-black opacity-50">PRECIO LANZAMIENTO RIO CUARTO</p>
+            <p className="text-[56px] font-black leading-none mt-3">${precio.toLocaleString('es-AR')}<span className="text-[18px] font-bold opacity-60">/mes</span></p>
+            <p className="text-[13px] opacity-60 font-bold mt-2">Sin comisión por turno • Sin contrato • Cancelás cuando querés</p>
+            <p className="text-[11px] opacity-40 font-bold mt-1">Te lo dejo activo en 5 minutos</p>
+            <a href={`https://wa.me/${wsp}?text=Hola! Quiero activar mi barberia por $${precio}/mes. Mi barberia se llama:`} className="inline-block mt-6 bg-white text-black rounded-full px-8 py-4 font-black text-sm tracking-widest">ACTIVAR MI BARBERIA POR WSP →</a>
           </div>
 
-          {/* DEMO */}
-          <div className="mt-8 bg-white border border-black/5 rounded-[24px] p-6 shadow-sm">
-            <p className="text-[#0A0A0A] text-[10px] tracking-[0.2em] font-black">DEMO REAL EN VIVO</p>
-            <p className="text-sm mt-2 font-black">Atelier Barber - Caso de éxito</p>
-            <p className="text-[12px] text-black/40 font-bold mt-1">Mirá cómo lo usa el cliente y cómo ves la caja vos</p>
-            <div className="flex gap-2 mt-4">
-              <a href="/" className="flex-1 bg-[#0A0A0A] text-white rounded-full py-3.5 text-xs font-black text-center shadow">VER CLIENTE</a>
-              <a href="/admin" className="flex-1 bg-[#F6F5F2] border border-black/5 rounded-full py-3.5 text-xs font-black text-center">VER ADMIN</a>
-            </div>
-            <p className="text-[10px] text-black/20 mt-3 text-center font-bold">Probalo vos mismo, reservá un turno de prueba</p>
-          </div>
-
-          {/* PRECIOS */}
-          <div className="mt-8">
-            <h2 className="text-[32px] leading-none font-black tracking-[-0.02em]">Inversión <span className="font-light">única.</span></h2>
-            <div className="mt-5 bg-[#0A0A0A] text-white rounded-[24px] p-6 shadow-[0_12px_24px_rgba(0,0,0,0.15)]">
-              <p className="text-[10px] tracking-widest opacity-40 font-black">PACK COMPLETO</p>
-              <p className="text-[36px] font-black mt-1">$150 USD</p>
-              <p className="text-xs opacity-50 font-bold">o $180.000 ARS • Pago único</p>
-              <div className="h-px bg-white/10 my-4"></div>
-              <p className="text-xs leading-relaxed opacity-70">Luego solo $20 USD / mes de mantenimiento (hosting, dominio y soporte). Cancelás cuando querés.</p>
-              <p className="text-[11px] mt-4 bg-white text-black rounded-full px-3 py-1.5 w-fit font-black">⚡ Entrega en 48hs</p>
-            </div>
-          </div>
-
-          <a href="https://wa.me/5493586021014?text=Hola!%20Vi%20la%20presentacion%20del%20sistema,%20quiero%20para%20mi%20local" className="mt-8 w-full bg-[#0A0A0A] text-white rounded-full py-5 font-black tracking-widest text-sm text-center block shadow-[0_12px_24px_rgba(0,0,0,0.15)]">
-            QUIERO PARA MI LOCAL →
-          </a>
-
-          <div className="mt-6 flex justify-center gap-4 text-[10px] text-black/20 font-black">
-            <span>✓ Sin apps</span><span>✓ Sin comisión</span><span>✓ 100% tuyo</span>
-          </div>
-
-          <footer className="w-full text-center py-8 mt-8 border-t border-black/5">
-            <p className="text-[10px] tracking-[0.3em] text-black/20 font-black">ATELIER SYSTEM • RÍO CUARTO</p>
-          </footer>
+          <p className="text-center text-[10px] tracking-[0.3em] text-black/20 font-black mt-10">TURNO LAB • HECHO EN RIO CUARTO • 2026</p>
         </div>
       </div>
     </>

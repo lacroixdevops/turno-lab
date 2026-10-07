@@ -1,120 +1,92 @@
 "use client"
-import { useState, useEffect, useMemo } from "react"
+import { useState, useEffect } from "react"
 import { supabase } from "../../lib/supabase"
 
-type Turno = { id: string; client_name: string; client_lastname: string; client_phone: string; date: string; time: string; status: string }
+const CLAVE_MAESTRA = "bigote123"
 
-export default function Admin() {
-  const [turnos, setTurnos] = useState<Turno[]>([])
-  const [filter, setFilter] = useState("todos")
-  const [selectedCalendarDate, setSelectedCalendarDate] = useState("")
-  const [currentMonth, setCurrentMonth] = useState(new Date())
-  const PRECIO = 18500
+export default function AdminMaestro() {
+  const [isAuth, setIsAuth] = useState(false)
+  const [passInput, setPassInput] = useState("")
+  const [businesses, setBusinesses] = useState<any[]>([])
+  const [form, setForm] = useState({name:'', phone:'', price:'18500', monthly:'15000'})
 
-  const getHoyLocal = () => {
-    const now = new Date()
-    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
-  }
-  const hoyLocal = getHoyLocal()
+  useEffect(()=>{ if(localStorage.getItem('maestro_auth')==='ok') setIsAuth(true) },[])
 
-  const fetchTurnos = async () => {
-    const { data } = await supabase.from("appointments").select("*").order("date").order("time")
-    if (data) setTurnos(data)
-  }
-  useEffect(() => { fetchTurnos() }, [])
-
-  const changeStatus = async (id: string, newStatus: string) => {
-    setTurnos(prev => prev.map(t => t.id === id? {...t, status: newStatus } : t))
-    await supabase.from("appointments").update({ status: newStatus }).eq("id", id)
+  const login = (e:any) => {
+    e.preventDefault()
+    if(passInput === CLAVE_MAESTRA){ localStorage.setItem('maestro_auth','ok'); setIsAuth(true) }
+    else alert('Clave incorrecta')
   }
 
-  const deleteTurno = async (id: string) => {
-    if (!confirm("¿Borrar turno?")) return
-    setTurnos(prev => prev.filter(t => t.id!== id))
-    await supabase.from("appointments").delete().eq("id", id)
+  const load = async () => {
+    const { data } = await supabase.from('businesses').select('*').order('next_due',{ascending:true})
+    if(data) setBusinesses(data)
+  }
+  useEffect(()=>{ if(isAuth) load() },[isAuth])
+
+  const makeSlug = (n:string) => n.toLowerCase().trim().replace(/\s+/g,'-').replace(/[^a-z0-9-]/g,'').replace(/--+/g,'-')
+  const create = async (e:any) => {
+    e.preventDefault()
+    const slug = makeSlug(form.name)
+    const today = new Date().toISOString().split('T')[0]
+    const due = new Date(); due.setDate(due.getDate()+30)
+    const { error } = await supabase.from('businesses').insert([{slug, name:form.name, owner_phone:form.phone, price:parseInt(form.price), monthly_price:parseInt(form.monthly), start_date:today, next_due:due.toISOString().split('T')[0], status:'active'}])
+    if(error) alert(error.message)
+    else { setForm({name:'',phone:'',price:'18500',monthly:'15000'}); load() }
   }
 
-  const formatPlata = (n: number) => "$" + n.toLocaleString('es-AR')
+  const cobrar = async (b:any) => {
+    const newDue = new Date(b.next_due); newDue.setDate(newDue.getDate()+30)
+    await supabase.from('businesses').update({next_due: newDue.toISOString().split('T')[0]}).eq('id', b.id)
+    load()
+  }
 
-  const stats = useMemo(() => {
-    const atendidos = turnos.filter(t => t.status === "atendido")
-    const hoyAtendidos = turnos.filter(t => t.date === hoyLocal && t.status === "atendido")
-    const activos = turnos.filter(t => t.status!== "atendido" && t.status!== "cancelado")
-    return {
-      plataHoy: hoyAtendidos.length * PRECIO,
-      plataTotal: atendidos.length * PRECIO,
-      atendidosHoy: hoyAtendidos.length,
-      atendidosTotal: atendidos.length,
-      activosTotal: activos.length
-    }
-  }, [turnos, hoyLocal])
+  const toggleStatus = async (id:string, cur:string) => {
+    await supabase.from('businesses').update({status: cur==='active'?'paused':'active'}).eq('id', id)
+    load()
+  }
 
-  const filtered = useMemo(() => {
-    if (selectedCalendarDate) return turnos.filter(t => t.date === selectedCalendarDate && t.status!== "cancelado")
-    if (filter === "realizados") return turnos.filter(t => t.status === "atendido")
-    if (filter === "hoy") return turnos.filter(t => t.date === hoyLocal && t.status!== "atendido" && t.status!== "cancelado")
-    return turnos.filter(t => t.status!== "atendido" && t.status!== "cancelado")
-  }, [turnos, filter, hoyLocal, selectedCalendarDate])
+  const eliminar = async (id:string, name:string) => {
+    if(!confirm(`¿ELIMINAR ${name}?`)) return
+    await supabase.from('appointments').delete().eq('business_id', id)
+    await supabase.from('businesses').delete().eq('id', id)
+    load()
+  }
 
-  // CALENDARIO
-  const ocupadosPorDia = useMemo(() => {
-    const map: Record<string, number> = {}
-    turnos.forEach(t => { if(t.status!=='cancelado') map[t.date] = (map[t.date] || 0) + 1 })
-    return map
-  }, [turnos])
+  const copiarLink = (slug:string) => {
+    navigator.clipboard.writeText(`${window.location.origin}/b/${slug}`)
+    alert('Link copiado')
+  }
 
-  const renderCalendario = () => {
-    const year = currentMonth.getFullYear()
-    const month = currentMonth.getMonth()
-    const firstDayWeek = new Date(year, month, 1).getDay()
-    const daysInMonth = new Date(year, month+1, 0).getDate()
-    const startOffset = firstDayWeek === 0? 6 : firstDayWeek - 1
-    const days: (number|null)[] = []
-    for(let i=0;i<startOffset;i++) days.push(null)
-    for(let d=1; d<=daysInMonth; d++) days.push(d)
+  const diasRestantes = (d:string) => {
+    const hoy = new Date(); hoy.setHours(0,0,0,0)
+    const vence = new Date(d); vence.setHours(0,0,0,0)
+    return Math.ceil((vence.getTime()-hoy.getTime())/(1000*60*60*24))
+  }
 
+  const fmt = (n:number) => "$"+n.toLocaleString('es-AR')
+  const activos = businesses.filter(b=>b.status==='active').length
+  const mrr = businesses.filter(b=>b.status==='active').reduce((s,b)=>s+(b.monthly_price||15000),0)
+  const vencidos = businesses.filter(b=> diasRestantes(b.next_due) < 0 && b.status==='active').length
+
+  if(!isAuth){
     return (
-      <div className="bg-white border border-black/5 rounded-[24px] p-5 shadow-sm">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="font-black text-sm capitalize tracking-tight">{currentMonth.toLocaleDateString('es-AR',{month:'long', year:'numeric'})}</h3>
-          <div className="flex gap-2">
-            <button onClick={()=>setCurrentMonth(new Date(year, month-1, 1))} className="w-8 h-8 rounded-full bg-[#F6F5F2] border border-black/5 font-bold">‹</button>
-            <button onClick={()=>setCurrentMonth(new Date(year, month+1, 1))} className="w-8 h-8 rounded-full bg-[#F6F5F2] border border-black/5 font-bold">›</button>
-          </div>
-        </div>
-        <div className="grid grid-cols-7 text-center text-[10px] tracking-widest font-black text-black/20 mb-2">
-          <div>L</div><div>M</div><div>X</div><div>J</div><div>V</div><div>S</div><div>D</div>
-        </div>
-        <div className="grid grid-cols-7 gap-1.5">
-          {days.map((d, idx) => {
-            if(d===null) return <div key={idx} />
-            const iso = `${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`
-            const count = ocupadosPorDia[iso] || 0
-            const diaSemana = new Date(year, month, d).getDay()
-            const cerrado = diaSemana===0 || diaSemana===1
-            let dot = null
-            if(!cerrado && count>0){
-              if(count >= 14) dot = <span className="w-1.5 h-1.5 rounded-full bg-red-500" />
-              else if(count >= 10) dot = <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
-              else dot = <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-            }
-            const isSelected = selectedCalendarDate===iso
-            return (
-              <button key={idx} disabled={cerrado} onClick={()=>setSelectedCalendarDate(iso)} className={`h-[52px] rounded-2xl border flex flex-col items-center justify-center text-xs font-black transition-all ${cerrado? 'opacity-20 bg-transparent border-transparent' : ''} ${isSelected? 'bg-[#0A0A0A] text-white border-[#0A0A0A] shadow-lg' : 'bg-[#F6F5F2] border-black/5 text-black/60 hover:border-black/10'} ${iso===hoyLocal &&!isSelected? 'border-black' : ''}`}>
-                {d}
-                <span className="mt-1 h-1.5 flex items-center">{cerrado? <span className="text-[7px]">CERR</span> : dot}</span>
-              </button>
-            )
-          })}
-        </div>
-        {selectedCalendarDate && (
-          <button onClick={()=>setSelectedCalendarDate("")} className="w-full mt-4 bg-[#0A0A0A] text-white rounded-full py-2.5 text-xs font-black">VER TODOS • {turnos.length}</button>
-        )}
-        <div className="flex gap-3 mt-3 text-[9px] font-bold text-black/30">
-          <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-emerald-500"/> Libre</span>
-          <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-amber-500"/> Casi</span>
-          <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-red-500"/> Lleno</span>
-        </div>
+      <div className="min-h-screen bg-black flex items-center justify-center p-6" style={{fontFamily:'Inter, sans-serif'}}>
+        <style>{`@import url('https://fonts.googleapis.com/css2?family=Inter:wght@700;900&display=swap');`}</style>
+        <form onSubmit={login} className="bg-white rounded-[28px] p-8 w-full max-w-[380px] text-center">
+          <p className="text-[10px] font-black tracking-[0.3em] text-black">TURNO LAB • MAESTRO</p>
+          <h1 className="text-[28px] font-black mt-4 text-black tracking-tight">Acceso privado</h1>
+          <input
+            type="password"
+            value={passInput}
+            onChange={e=>setPassInput(e.target.value)}
+            placeholder="Contraseña maestra"
+            className="w-full mt-6 bg-[#EDEDED] border-2 border-black rounded-full px-5 py-4 text-[15px] font-black text-black placeholder:text-black/70 text-center outline-none"
+            autoFocus
+          />
+          <button className="w-full mt-4 bg-black text-white rounded-full py-4 font-black text-[12px] tracking-[0.2em]">ENTRAR</button>
+          <p className="text-[10px] font-black text-black mt-4">Solo dueño de TurnoLab •</p>
+        </form>
       </div>
     )
   }
@@ -122,84 +94,70 @@ export default function Admin() {
   return (
     <>
       <style>{`@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');`}</style>
-      <div className="min-h-screen bg-[#F6F5F2] text-[#0A0A0A] flex flex-col" style={{ fontFamily: 'Inter' }}>
-        <div className="w-full bg-[#0A0A0A] text-white">
-          <div className="max-w-[480px] mx-auto px-5 py-6 flex items-center justify-between">
-            <p className="text-[10px] tracking-[0.4em] font-black">ATELIER • ADMIN</p>
-            <p className="text-[10px] tracking-widest opacity-50">{hoyLocal.split('-').reverse().join('/')}</p>
+      <div className="min-h-screen bg-[#F6F5F2] text-black" style={{fontFamily:'Inter'}}>
+        <div className="w-full bg-black text-white">
+          <div className="max-w-[760px] mx-auto px-5 py-6 flex justify-between items-center">
+            <p className="text-[10px] tracking-[0.4em] font-black">TURNO LAB • MAESTRO</p>
+            <button onClick={()=>{localStorage.removeItem('maestro_auth'); setIsAuth(false)}} className="text-[9px] bg-white/10 px-3 py-1 rounded-full font-black">SALIR</button>
           </div>
         </div>
 
-        <div className="max-w-[480px] mx-auto w-full flex-1 px-5 py-8">
-          <h1 className="text-[36px] leading-[0.9] font-black tracking-[-0.02em]">Panel de<br/>turnos<span className="font-light">.</span></h1>
+        <div className="max-w-[760px] mx-auto px-5 py-8">
+          <h1 className="text-[40px] font-black tracking-[-0.03em] leading-[0.9]">Cobros<span className="font-light">.</span></h1>
 
-          <a href="/admin/caja" className="w-full bg-[#0A0A0A] text-white rounded-full py-4 font-black tracking-widest text-sm text-center block mt-6 shadow-[0_12px_24px_rgba(0,0,0,0.15)]">IR A CAJA →</a>
-
-          <div className="grid grid-cols-2 gap-3 mt-6">
-            <div className="bg-[#0A0A0A] rounded-[20px] p-5 text-white">
-              <p className="text-[10px] font-black opacity-50 tracking-widest">CAJA HOY</p>
-              <p className="text-[22px] font-black mt-1">{formatPlata(stats.plataHoy)}</p>
-              <p className="text-[11px] opacity-60">{stats.atendidosHoy} realizados hoy</p>
-            </div>
-            <div className="bg-white border border-black/5 rounded-[20px] p-5 shadow-sm">
-              <p className="text-[10px] font-black text-black/30 tracking-widest">CAJA TOTAL</p>
-              <p className="text-[22px] font-black mt-1">{formatPlata(stats.plataTotal)}</p>
-              <p className="text-[11px] text-black/30">{stats.atendidosTotal} realizados total</p>
-            </div>
+          <div className="grid grid-cols-3 gap-3 mt-6">
+            <div className="bg-black rounded-[20px] p-5 text-white"><p className="text-[10px] opacity-50 font-black tracking-widest">MRR</p><p className="text-[22px] font-black mt-1">{fmt(mrr)}</p><p className="text-[11px] opacity-60">{activos} activos</p></div>
+            <div className={`rounded-[20px] p-5 border-2 ${vencidos>0?'bg-red-500 text-white border-red-500':'bg-white border-black/10 text-black'}`}><p className="text-[10px] font-black opacity-60">VENCIDOS</p><p className="text-[22px] font-black mt-1">{vencidos}</p></div>
+            <div className="bg-white rounded-[20px] p-5 border-2 border-black/10 text-black"><p className="text-[10px] font-black text-black/40 tracking-widest">TOTAL</p><p className="text-[22px] font-black mt-1">{businesses.length}</p></div>
           </div>
 
-          {/* CALENDARIO NUEVO */}
-          <div className="mt-6">
-            <p className="text-[10px] tracking-[0.2em] text-black/30 font-black ml-1 mb-3">CALENDARIO DE TURNOS</p>
-            {renderCalendario()}
+          <div className="mt-8 bg-white border-2 border-black/10 rounded-[24px] p-5 shadow-sm">
+            <p className="text-[10px] tracking-[0.2em] text-black/50 font-black mb-3">CREAR BARBERIA</p>
+            <form onSubmit={create} className="grid gap-3">
+              <input value={form.name} onChange={e=>setForm({...form, name:e.target.value})} placeholder="Nombre de la barbería" className="bg-[#EDEDED] border-2 border-black/10 rounded-full px-5 py-3.5 text-[14px] font-black text-black placeholder:text-black/50 outline-none" required />
+              <div className="grid grid-cols-2 gap-3">
+                <input value={form.phone} onChange={e=>setForm({...form, phone:e.target.value})} placeholder="WhatsApp" className="bg-[#EDEDED] border-2 border-black/10 rounded-full px-5 py-3.5 text-[14px] font-black text-black placeholder:text-black/50 outline-none" required />
+                <input value={form.price} onChange={e=>setForm({...form, price:e.target.value})} placeholder="18500" className="bg-[#EDEDED] border-2 border-black/10 rounded-full px-5 py-3.5 text-[14px] font-black text-black placeholder:text-black/50 outline-none" />
+              </div>
+              <div className="flex gap-3 items-center">
+                <input value={form.monthly} onChange={e=>setForm({...form, monthly:e.target.value})} placeholder="15000" className="bg-[#EDEDED] border-2 border-black/10 rounded-full px-5 py-3.5 text-[14px] font-black text-black w-[140px] outline-none" />
+                <span className="text-[11px] text-black/60 font-black">/mes</span>
+              </div>
+              <button className="bg-black text-white rounded-full py-4 font-black text-sm tracking-widest">+ CREAR Y ACTIVAR 30 DIAS</button>
+            </form>
           </div>
 
-          <div className="flex gap-1 p-1 bg-white rounded-full border border-black/5 w-fit mt-6 shadow-sm">
-            <button onClick={() => {setFilter("todos"); setSelectedCalendarDate("")}} className={`px-5 py-2.5 rounded-full text-xs font-black ${filter === "todos" &&!selectedCalendarDate? 'bg-[#0A0A0A] text-white shadow' : 'text-black/30'}`}>Activos ({stats.activosTotal})</button>
-            <button onClick={() => {setFilter("hoy"); setSelectedCalendarDate("")}} className={`px-5 py-2.5 rounded-full text-xs font-black ${filter === "hoy" &&!selectedCalendarDate? 'bg-[#0A0A0A] text-white shadow' : 'text-black/30'}`}>Hoy</button>
-            <button onClick={() => {setFilter("realizados"); setSelectedCalendarDate("")}} className={`px-5 py-2.5 rounded-full text-xs font-black ${filter === "realizados" &&!selectedCalendarDate? 'bg-[#0A0A0A] text-white shadow' : 'text-black/30'}`}>Realizados ({stats.atendidosTotal})</button>
-          </div>
-
-          <div className="mt-3">
-            <p className="text-[10px] tracking-[0.2em] text-black/30 font-black ml-1 mb-3">
-              {selectedCalendarDate? `TURNOS DEL ${selectedCalendarDate.split('-').reverse().join('/')} • ${filtered.length}` : `LISTA ${filter.toUpperCase()} • ${filtered.length}`}
-            </p>
-            <div className="space-y-3">
-              {filtered.map(t => (
-                <div key={t.id} className={`bg-white border rounded-[24px] p-5 shadow-sm ${t.status === 'atendido'? 'border-emerald-200 bg-emerald-50/30' : 'border-black/5'}`}>
+          <div className="mt-8 space-y-3">
+            <p className="text-[10px] tracking-[0.2em] text-black/40 font-black ml-1">CLIENTES • SIN ACCESO A AGENDAS</p>
+            {businesses.map(b=>{
+              const dias = diasRestantes(b.next_due)
+              let color = "bg-black text-white"
+              if(dias < 0) color = "bg-red-500 text-white"
+              if(dias >=0 && dias <=3) color = "bg-amber-400 text-black"
+              return (
+                <div key={b.id} className="bg-white border-2 border-black/10 rounded-[24px] p-5">
                   <div className="flex justify-between items-start">
                     <div>
-                      <span className="text-[10px] tracking-widest text-black/20 font-black">CLIENTE</span>
-                      <p className="text-black font-black text-[17px] mt-1">{t.client_name} {t.client_lastname || ''}</p>
+                      <p className="font-black text-[16px] text-black">{b.name} <span className={`ml-2 text-[9px] px-2.5 py-1 rounded-full font-black ${color}`}>{dias<0? `VENCIDO ${Math.abs(dias)}d` : `${dias} DIAS`}</span></p>
+                      <p className="text-[11px] text-black/60 font-bold mt-1">Vence: {b.next_due?.split('-').reverse().join('/')} • {fmt(b.monthly_price||15000)}/mes • Corte {fmt(b.price||18500)}</p>
                     </div>
-                    <span className={`text-[9px] px-3 py-1.5 rounded-full font-black tracking-widest ${t.status === 'atendido'? 'bg-[#0A0A0A] text-white' : 'bg-amber-100 text-amber-800'}`}>{t.status.toUpperCase()}</span>
+                    <span className={`text-[9px] px-2.5 py-1 rounded-full font-black ${b.status==='active'?'bg-black text-white':'bg-black/10 text-black/50'}`}>{b.status==='active'?'ACTIVO':'PAUSADO'}</span>
                   </div>
-                  <div className="h-px bg-black/5 my-4"></div>
-                  <div className="space-y-2.5">
-                    <div className="flex"><span className="text-[10px] tracking-widest text-black/20 font-black w-[90px]">TEL:</span><span className="text-black/70 text-[13px] font-bold">{t.client_phone}</span></div>
-                    <div className="flex"><span className="text-[10px] tracking-widest text-black/20 font-black w-[90px]">FECHA:</span><span className="text-black/70 text-[13px] font-bold">{t.date.split('-').reverse().join('/')} • {t.time}hs</span></div>
-                    <div className="flex"><span className="text-[10px] tracking-widest text-black/20 font-black w-[90px]">SERVICIO:</span><span className="text-black/70 text-[13px]">Corte Premium • {formatPlata(PRECIO)}</span></div>
+                  <div className="grid grid-cols-2 gap-2 mt-4">
+                    <a href={`/b/${b.slug}`} target="_blank" className="bg-[#EDEDED] border-2 border-black/10 rounded-full py-2.5 text-center text-xs font-black text-black">Ver Página</a>
+                    <button onClick={()=>copiarLink(b.slug)} className="bg-white border-2 border-black/10 rounded-full py-2.5 text-center text-xs font-black text-black">Copiar Link</button>
                   </div>
-                  <div className="flex gap-2 mt-5 pt-4 border-t border-black/5">
-                    <select value={t.status} onChange={e => changeStatus(t.id, e.target.value)} className="flex-1 bg-[#F6F5F2] border border-black/5 rounded-full px-4 py-3 text-xs text-black outline-none font-bold">
-                      <option value="pendiente">Pendiente</option>
-                      <option value="confirmado">Confirmado</option>
-                      <option value="atendido">Realizado ✓</option>
-                      <option value="cancelado">Cancelado</option>
-                    </select>
-                    <a href={`https://wa.me/54${t.client_phone}?text=Hola ${t.client_name}! Te confirmo tu turno del ${t.date.split('-').reverse().join('/')} a las ${t.time} en Atelier Barber`} target="_blank" className="px-6 bg-[#0A0A0A] text-white rounded-full flex items-center justify-center font-black text-xs">WSP</a>
-                    <button onClick={() => deleteTurno(t.id)} className="w-11 bg-black/5 text-black/20 rounded-full font-black">✕</button>
+                  <div className="grid grid-cols-3 gap-2 mt-2">
+                    <button onClick={()=>cobrar(b)} className="bg-emerald-500 text-white rounded-full py-2.5 text-xs font-black col-span-2">Cobrado +30 días</button>
+                    <button onClick={()=>toggleStatus(b.id, b.status)} className="bg-black text-white rounded-full py-2.5 text-xs font-black">{b.status==='active'?'PAUSAR':'ACTIVAR'}</button>
                   </div>
+                  <button onClick={()=>eliminar(b.id, b.name)} className="w-full mt-2 text-red-400 text-[10px] font-black tracking-widest">ELIMINAR</button>
                 </div>
-              ))}
-              {filtered.length===0 && <div className="bg-white border border-black/5 rounded-[24px] p-10 text-center text-black/20 text-sm font-bold">No hay turnos {selectedCalendarDate? `para el ${selectedCalendarDate.split('-').reverse().join('/')}` : 'en este filtro'}</div>}
-            </div>
+              )
+            })}
           </div>
+          <p className="text-center text-[9px] text-black/30 mt-8 font-black tracking-widest">MAESTRO NO VE AGENDAS • PROFESIONAL</p>
         </div>
-
-        <footer className="w-full text-center py-8 mt-16 border-t border-black/5 bg-white">
-          <p className="text-[10px] tracking-[0.3em] text-black/20 font-black">ATELIER BARBER • MAR A SAB 9-12 / 16-20</p>
-        </footer>
       </div>
     </>
   )
