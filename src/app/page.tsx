@@ -1,45 +1,56 @@
 "use client"
-import Link from "next/link"
-import { useEffect, useState } from "react"
-import { supabase } from "../lib/supabase"
 
-export default function Home(){
-  const [barberias, setBarberias] = useState<any[]>([])
-
-  useEffect(()=>{
-    const load = async () => {
-      const { data } = await supabase.from('businesses').select('*').eq('status','active')
-      if(data) setBarberias(data)
-    }
-    load()
-  },[])
+export default function Home() {
+  const phone = "5493584396887" // tu whatsapp
+  const msg = encodeURIComponent("Hola! Vi TurnoLab y quiero una demo para mi barbería")
 
   return (
-    <div className="min-h-screen bg-white text-black">
-      <div className="w-full bg-black text-white px-6 py-4 flex justify-between items-center">
-        <p className="text-[10px] tracking-[0.4em] font-black">TURNO LAB</p>
-        <Link href="/admin" className="text-[10px] font-black tracking-widest bg-white text-black px-4 py-2 rounded-full">MASTER ADMIN</Link>
-      </div>
+    <>
+      <style>{`@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');`}</style>
+      <div className="min-h-screen bg-white text-black flex flex-col" style={{fontFamily:'Inter'}}>
 
-      <div className="p-10 text-center max-w-[560px] mx-auto">
-        <h1 className="text-4xl font-black tracking-tight">TURNO LAB</h1>
-        <p className="mt-3 text-[13px] font-bold text-black/50 tracking-wide leading-relaxed">PROBÁ TU NUEVO SISTEMA DE SOFTWARE PARA AUTOMATIZACIÓN DE TURNOS</p>
+        {/* HEADER */}
+        <div className="w-full max-w-[960px] mx-auto px-6 py-6 flex justify-between items-center">
+          <p className="text-[11px] font-black tracking-[0.3em]">TURNO LAB</p>
+          <a href="/admin" className="text-[10px] font-black tracking-widest text-black/40 hover:text-black">ACCESO MAESTRO</a>
+        </div>
 
-        <div className="mt-8 flex flex-col gap-3">
-          {barberias.length === 0 && (
-            <p className="text-sm text-black/30 font-bold py-6">No hay barberías activas. Creá una en Master Admin.</p>
-          )}
+        {/* HERO */}
+        <div className="flex-1 max-w-[960px] mx-auto px-6 pt-16 pb-20 text-center">
+          <h1 className="text-[56px] md:text-[84px] font-black leading-[0.85] tracking-[-0.04em]">
+            TURNO<br/>LAB<span className="font-light">.</span>
+          </h1>
+          <p className="mt-6 text-[15px] md:text-[18px] font-bold leading-[1.4] text-black/60 max-w-[520px] mx-auto">
+            Software para barberías que automatiza turnos, evita bardo de WhatsApp y te ordena la caja. Sin comisiones.
+          </p>
 
-          {barberias.map(b => (
-            <Link key={b.id} href={`/b/${b.slug}`} className="bg-black text-white px-6 py-3.5 rounded-full font-black text-sm text-center">
-              Ver {b.name} → /b/{b.slug}
-            </Link>
-          ))}
+          <div className="mt-8 flex flex-col gap-3 max-w-[360px] mx-auto">
+            <a href={`https://wa.me/${phone}?text=${msg}`} target="_blank" className="bg-black text-white rounded-full py-4 font-black text-[13px] tracking-[0.15em] text-center">
+              SOLICITAR DEMO POR WHATSAPP
+            </a>
+            <p className="text-[11px] font-bold text-black/30 mt-2">Desde $15.000/mes • Instalación en 5 minutos</p>
+          </div>
 
-          <Link href="/presentacion" className="bg-zinc-100 text-black px-6 py-3.5 rounded-full font-black text-sm text-center border border-black/5 mt-2">Ver Landing Ventas</Link>
-          <Link href="/admin" className="bg-white border border-black/10 text-black/40 px-6 py-3.5 rounded-full font-black text-xs tracking-widest text-center">Ir a Master Admin</Link>
+          <div className="mt-16 grid grid-cols-1 md:grid-cols-3 gap-4 text-left max-w-[760px] mx-auto">
+            <div className="bg-[#F6F5F2] rounded-[20px] p-5 border border-black/5">
+              <p className="font-black text-[13px]">Agenda 24/7</p>
+              <p className="text-[12px] font-bold text-black/50 mt-1">El cliente reserva solo, sin que le contestes. Se bloquea el horario automáticamente.</p>
+            </div>
+            <div className="bg-[#F6F5F2] rounded-[20px] p-5 border border-black/5">
+              <p className="font-black text-[13px]">Caja anclada a HOY</p>
+              <p className="text-[12px] font-bold text-black/50 mt-1">Ventas por fecha, historial real y link para cerrar caja por WhatsApp.</p>
+            </div>
+            <div className="bg-[#F6F5F2] rounded-[20px] p-5 border border-black/5">
+              <p className="font-black text-[13px]">Vos cobrás primero</p>
+              <p className="text-[12px] font-bold text-black/50 mt-1">Cada barbería paga su link mensual. Vos controlás vencimientos desde el Maestro.</p>
+            </div>
+          </div>
+
+          <div className="mt-16">
+            <p className="text-[10px] font-black tracking-[0.3em] text-black/20">TURNO LAB • HECHO EN RIO CUARTO</p>
+          </div>
         </div>
       </div>
-    </div>
+    </>
   )
 }
