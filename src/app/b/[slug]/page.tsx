@@ -109,12 +109,19 @@ export default function BarberiaPage() {
     <>
       <style>{`@import url('https://fonts.googleapis.com/css2?family=Bodoni+Moda:opsz,wght@6..96,700&family=Inter:wght@400;600;700;900&display=swap');`}</style>
       <div className="min-h-screen bg-[#F6F5F2] text-[#0A0A0A] flex flex-col" style={{fontFamily:'Inter'}}>
-        <div className="w-full bg-[#0A0A0A] text-white">
-          <div className="max-w-[480px] mx-auto px-5 py-6 flex items-center justify-between">
-            <p className="text-[10px] tracking-[0.4em] font-black">{business.name} • RÍO CUARTO</p>
-            <p className="text-[10px] tracking-widest opacity-50">MAR A SAB • 9-12 / 16-20</p>
+        {/* HEADER CON LOGIN ARRIBA A LA DERECHA */}
+        <div className="w-full bg-[#0A0A0A] text-white sticky top-0 z-50">
+          <div className="max-w-[480px] mx-auto px-5 py-4 flex items-center justify-between">
+            <div>
+              <p className="text-[10px] tracking-[0.4em] font-black">{business.name} • RÍO CUARTO</p>
+              <p className="text-[8px] tracking-widest opacity-40 mt-0.5 md:block hidden">MAR A SAB • 9-12 / 16-20</p>
+            </div>
+            <a href={`/b/${slug}/admin`} className="bg-white text-black hover:bg-zinc-200 rounded-full px-4 py-2 text-[9px] font-black tracking-[0.15em] transition">
+              LOGIN 
+            </a>
           </div>
         </div>
+
         <div className="px-5 py-8 flex-1">
           <div className="max-w-[480px] mx-auto">
             <h1 className="text-[48px] leading-[0.85] font-black tracking-[-0.03em] text-[#0A0A0A]">RESERVÁ<br/>TU TURNO<span className="font-light">.</span></h1>

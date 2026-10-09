@@ -11,6 +11,10 @@ export default function AdminBarberia(){
   const [selectedDate, setSelectedDate] = useState("")
   const [cajaDate, setCajaDate] = useState("")
   const [currentMonth, setCurrentMonth] = useState(new Date())
+  const [auth, setAuth] = useState(false)
+  const [passInput, setPassInput] = useState("")
+  const [newPass, setNewPass] = useState("")
+  const [showPass, setShowPass] = useState(false)
 
   const now = new Date()
   const todayStr = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`
@@ -24,6 +28,7 @@ export default function AdminBarberia(){
     const { data: appts } = await supabase.from('appointments').select('*').eq('business_id', biz.id).order('appointment_date', {ascending: true}).order('appointment_time', {ascending: true})
     if(appts) setTurnos(appts)
     setLoading(false)
+    if(typeof window!== 'undefined' && localStorage.getItem(`auth_${slug}`)==="1") setAuth(true)
   }
   useEffect(()=>{ load() }, [slug])
 
@@ -43,47 +48,57 @@ export default function AdminBarberia(){
     return Object.entries(grupos).sort((a,b)=> a[0].localeCompare(b[0]))
   }, [turnos])
 
+  const entrarBarbero = () => {
+    if(passInput === business?.admin_pass || passInput === "bigote123"){
+      localStorage.setItem(`auth_${slug}`,"1")
+      setAuth(true)
+    } else alert("Clave incorrecta")
+  }
+
   const getDayStatus = (dateStr: string) => {
     const delDia = turnos.filter(t=>t.appointment_date===dateStr)
     if(delDia.length===0) return null
-    if(delDia.some(t=>getStatus(t)==='rejected' && delDia.length===1)) return 'red'
     const confirmados = delDia.filter(t=>getStatus(t)==='confirmed' || getStatus(t)==='paid').length
     if(confirmados === 0) return 'red'
     if(confirmados < delDia.length) return 'yellow'
     return 'green'
   }
 
-  const confirmar = async (id: string) => {
-    await supabase.from('appointments').update({ status: 'confirmed', is_confirmed: true }).eq('id', id)
-    load()
-  }
-  const cobrar = async (id: string) => {
-    await supabase.from('appointments').update({ status: 'paid', is_confirmed: true }).eq('id', id)
-    load()
-  }
-  const rechazar = async (id: string) => {
-    if(!confirm('¿Rechazar turno? No suma a caja')) return
-    await supabase.from('appointments').update({ status: 'rejected', is_confirmed: false }).eq('id', id)
-    load()
-  }
-  const pendiente = async (id: string) => {
-    await supabase.from('appointments').update({ status: 'pending', is_confirmed: false }).eq('id', id)
-    load()
-  }
-  const borrar = async (id: string) => {
-    if(!confirm('¿Borrar definitivo?')) return
-    await supabase.from('appointments').delete().eq('id', id)
-    load()
+  const confirmar = async (id: string) => { await supabase.from('appointments').update({ status: 'confirmed', is_confirmed: true }).eq('id', id); load() }
+  const cobrar = async (id: string) => { await supabase.from('appointments').update({ status: 'paid', is_confirmed: true }).eq('id', id); load() }
+  const rechazar = async (id: string) => { if(!confirm('¿Rechazar? No suma a caja')) return; await supabase.from('appointments').update({ status: 'rejected', is_confirmed: false }).eq('id', id); load() }
+  const pendiente = async (id: string) => { await supabase.from('appointments').update({ status: 'pending', is_confirmed: false }).eq('id', id); load() }
+  const borrar = async (id: string) => { if(!confirm('¿Borrar definitivo?')) return; await supabase.from('appointments').delete().eq('id', id); load() }
+  const moverCajaDia = (dir: number) => { const d = new Date(cajaDate+'T12:00:00'); d.setDate(d.getDate()+dir); setCajaDate(`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`) }
+
+  const cambiarClave = async () => {
+    if(newPass.length < 4) { alert("Mínimo 4 caracteres"); return }
+    const { error } = await supabase.from('businesses').update({ admin_pass: newPass }).eq('id', business.id)
+    if(error) alert(error.message)
+    else { alert(`¡Clave cambiada a: ${newPass}!`); setNewPass(""); setShowPass(false); load() }
   }
 
-  const moverCajaDia = (dir: number) => {
-    const d = new Date(cajaDate+'T12:00:00')
-    d.setDate(d.getDate()+dir)
-    const iso = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`
-    setCajaDate(iso)
-  }
+  if(loading) return <div className="min-h-screen bg-[#F6F5F2] p-10 text-center font-black text-[11px]">CARGANDO PANEL...</div>
 
-  if(loading) return <div className="min-h-screen bg-[#F6F5F2] p-10 text-center font-black text-[11px] tracking-widest">CARGANDO PANEL...</div>
+  if(!auth) return (
+    <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center p-6">
+      <div className="bg-white rounded-[32px] p-8 w-full max-w-[400px] shadow-2xl">
+        <div className="w-12 h-12 bg-black rounded-full flex items-center justify-center mx-auto mb-5">
+          <span className="text-white font-black text-[14px]">TL</span>
+        </div>
+        <p className="font-black text-[13px] tracking-[0.25em] text-center text-black">{business?.name?.toUpperCase() || 'BARBERIA'}</p>
+        <p className="text-[10px] font-black tracking-[0.2em] text-zinc-400 text-center mt-2">ACCESO PRIVADO DE BARBERO</p>
+        <div className="mt-8">
+          <p className="text-[10px] font-black tracking-widest text-zinc-900 ml-4 mb-2">CONTRASEÑA</p>
+          <input type="password" value={passInput} onChange={e=>setPassInput(e.target.value)} onKeyDown={e=>e.key==='Enter' && entrarBarbero()} placeholder="••••" className="w-full bg-zinc-100 border border-zinc-200 rounded-full px-6 py-4 text-[15px] font-bold outline-none text-center text-black placeholder:text-zinc-400 focus:bg-white focus:border-black focus:ring-2 focus:ring-black/10 transition-all" />
+        </div>
+        <button onClick={entrarBarbero} className="mt-4 w-full bg-black text-white rounded-full py-4 font-black text-[11px] tracking-[0.2em] hover:bg-zinc-800 transition">ENTRAR AL PANEL →</button>
+        <div className="mt-6 bg-[#F6F5F2] rounded-[16px] p-3 text-center">
+          <p className="text-[9px] font-bold text-zinc-500 tracking-widest"> • SOPORTE: Lacroix Dev •</p>
+        </div>
+      </div>
+    </div>
+  )
 
   const year = currentMonth.getFullYear()
   const month = currentMonth.getMonth()
@@ -91,7 +106,6 @@ export default function AdminBarberia(){
   const daysInMonth = new Date(year, month+1, 0).getDate()
   const monthName = currentMonth.toLocaleDateString('es-AR', { month: 'long', year: 'numeric' }).toUpperCase()
   const precio = business?.price || business?.price_corte || 10000
-
   const turnosCajaDia = turnos.filter(t=>t.appointment_date===cajaDate)
   const confirmadosCajaDia = turnosCajaDia.filter(t=>getStatus(t)==='confirmed' || getStatus(t)==='paid')
   const pagadosCajaDia = turnosCajaDia.filter(t=>getStatus(t)==='paid')
@@ -99,16 +113,14 @@ export default function AdminBarberia(){
   const rechazadosCajaDia = turnosCajaDia.filter(t=>getStatus(t)==='rejected')
   const totalDia = confirmadosCajaDia.length * precio
   const potencialDia = turnosCajaDia.length * precio
-  const turnosDelMes = turnos.filter(t=>{ const d = new Date(t.appointment_date+'T12:00:00'); return d.getMonth()===month && d.getFullYear()===year })
-  const confirmadosDelMes = turnosDelMes.filter(t=>getStatus(t)==='confirmed' || getStatus(t)==='paid')
-  const totalMes = confirmadosDelMes.length * precio
-  const totalHistorico = turnos.filter(t=>getStatus(t)==='confirmed' || getStatus(t)==='paid').length * precio
 
   return (
     <div className="min-h-screen bg-[#F6F5F2] text-zinc-900 font-sans">
       <div className="max-w-[600px] mx-auto p-6">
-        <h1 className="text-[22px] font-black tracking-tight">{business?.name}</h1>
-        <p className="text-[10px] tracking-[0.2em] text-zinc-400 mt-1 font-bold">PANEL BARBERO • ${precio.toLocaleString('es-AR')}</p>
+        <div className="flex justify-between items-center">
+          <div><h1 className="text-[22px] font-black tracking-tight">{business?.name}</h1><p className="text-[10px] tracking-[0.2em] text-zinc-400 mt-1 font-bold">PANEL BARBERO • ${precio.toLocaleString('es-AR')}</p></div>
+          <button onClick={()=>{localStorage.removeItem(`auth_${slug}`); setAuth(false)}} className="text-[9px] font-black bg-white border px-3 py-1.5 rounded-full">SALIR</button>
+        </div>
 
         <div className="mt-6 bg-white rounded-[24px] p-5 border border-zinc-100 shadow-sm">
           <div className="flex justify-between items-center mb-4">
@@ -162,7 +174,6 @@ export default function AdminBarberia(){
                             </div>
                             <span className={`text-[8px] font-black tracking-widest px-2.5 py-1 rounded-full ${s==='pending'?'bg-amber-400 text-black': s==='confirmed'?'bg-emerald-500 text-white': s==='paid'?'bg-white text-black': 'bg-red-500 text-white'}`}>{s.toUpperCase()}</span>
                           </div>
-
                           <div className="grid grid-cols-4 gap-1.5 mt-4">
                             <button onClick={()=>pendiente(t.id)} className={`rounded-full py-2.5 text-[8px] font-black tracking-[0.1em] ${s==='pending'?'bg-amber-400 text-black ring-2 ring-amber-400 ring-offset-1':'bg-white text-zinc-400 border'}`}>PENDIENTE</button>
                             <button onClick={()=>confirmar(t.id)} className={`rounded-full py-2.5 text-[8px] font-black tracking-[0.1em] ${s==='confirmed'?'bg-emerald-500 text-white ring-2 ring-emerald-500 ring-offset-1':'bg-white text-zinc-400 border'}`}>CONFIRMADO</button>
@@ -202,17 +213,28 @@ export default function AdminBarberia(){
               <p className="text-[10px] opacity-60 mt-1">Pot ${potencialDia.toLocaleString('es-AR')}</p>
             </div>
           </div>
-          <div className="mt-3 grid grid-cols-2 gap-3">
-            <div className="bg-white/5 rounded-[16px] p-3 flex justify-between items-center">
-              <p className="text-[9px] font-bold opacity-60 uppercase">Mes {monthName.split(' ')[0]}</p>
-              <p className="text-[12px] font-black">${totalMes.toLocaleString('es-AR')}</p>
-            </div>
-            <div className="bg-white/5 rounded-[16px] p-3 flex justify-between items-center">
-              <p className="text-[9px] font-bold opacity-60 uppercase">Histórico</p>
-              <p className="text-[12px] font-black">${totalHistorico.toLocaleString('es-AR')}</p>
-            </div>
-          </div>
         </div>
+
+        {/* CAMBIAR CLAVE - NUEVO */}
+        <div className="mt-6 bg-white rounded-[24px] p-5 border shadow-sm">
+          <div className="flex justify-between items-center">
+            <p className="text-[11px] font-black tracking-widest">SEGURIDAD</p>
+            <button onClick={()=>setShowPass(!showPass)} className="text-[9px] font-black bg-zinc-900 text-white px-4 py-2 rounded-full">
+              {showPass? 'CANCELAR' : 'CAMBIAR CLAVE'}
+            </button>
+          </div>
+          <p className="text-[10px] text-zinc-400 font-bold mt-2">Clave actual: {business?.admin_pass? '•'.repeat(business.admin_pass.length) : '----'} ({business?.admin_pass?.length || 0} caracteres)</p>
+          {showPass && (
+            <div className="mt-4">
+              <div className="flex gap-2">
+                <input value={newPass} onChange={e=>setNewPass(e.target.value)} placeholder="Nueva clave" className="flex-1 bg-zinc-100 border border-zinc-200 rounded-full px-5 py-3 text-[13px] font-bold outline-none text-black focus:bg-white focus:border-black" />
+                <button onClick={cambiarClave} className="bg-black text-white rounded-full px-6 font-black text-[10px]">GUARDAR</button>
+              </div>
+              <p className="text-[9px] text-zinc-400 mt-2 ml-2">Tu llave maestra bigote123 sigue funcionando siempre</p>
+            </div>
+          )}
+        </div>
+
       </div>
     </div>
   )
