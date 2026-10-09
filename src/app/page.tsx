@@ -93,7 +93,7 @@ export default function TurnoLabLanding(){
         <div className="bg-black text-white py-16">
           <div className="max-w-[1100px] mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-8">
             <div>
-              <h2 className="text-[42px] font-black leading-none"> $15.000 / mes</h2>
+              <h2 className="text-[42px] font-black leading-none"> $65.000</h2>
               <p className="mt-2 text-white/50 font-bold text-[13px]">Tu link + Panel + Caja + Soporte Río Cuarto. Sin permanencia.</p>
             </div>
             <a href="https://wa.me/5493584123456?text=Hola%20Lacroix!%20Quiero%20TurnoLab%20Pro%20para%20mi%20barberia" className="bg-white text-black rounded-full px-10 py-5 font-black text-[12px] tracking-widest">QUIERO EMPEZAR HOY →</a>
