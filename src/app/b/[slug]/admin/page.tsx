@@ -3,6 +3,8 @@ import { useEffect, useState, useMemo } from "react"
 import { supabase } from "@/lib/supabase"
 import { useParams } from "next/navigation"
 
+console.log("URL:", process.env.NEXT_PUBLIC_SUPABASE_URL)
+console.log("KEY:", process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.slice(0,15))
 export default function AdminBarberia(){
   const { slug } = useParams()
   const [business, setBusiness] = useState<any>(null)
@@ -80,7 +82,7 @@ export default function AdminBarberia(){
 
   if(loading) return <div className="min-h-screen bg-[#F6F5F2] p-10 text-center font-black text-[11px]">CARGANDO PANEL...</div>
 
-  if(!auth) return (
+    if(!auth) return (
     <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center p-6">
       <div className="bg-white rounded-[32px] p-8 w-full max-w-[400px] shadow-2xl">
         <div className="w-12 h-12 bg-black rounded-full flex items-center justify-center mx-auto mb-5">
@@ -93,6 +95,11 @@ export default function AdminBarberia(){
           <input type="password" value={passInput} onChange={e=>setPassInput(e.target.value)} onKeyDown={e=>e.key==='Enter' && entrarBarbero()} placeholder="••••" className="w-full bg-zinc-100 border border-zinc-200 rounded-full px-6 py-4 text-[15px] font-bold outline-none text-center text-black placeholder:text-zinc-400 focus:bg-white focus:border-black focus:ring-2 focus:ring-black/10 transition-all" />
         </div>
         <button onClick={entrarBarbero} className="mt-4 w-full bg-black text-white rounded-full py-4 font-black text-[11px] tracking-[0.2em] hover:bg-zinc-800 transition">ENTRAR AL PANEL →</button>
+        
+        <a href={`/b/${slug}`} className="mt-3 w-full bg-zinc-100 text-zinc-600 rounded-full py-3.5 font-black text-[10px] tracking-[0.2em] flex items-center justify-center hover:bg-zinc-200 transition">
+          ← VOLVER AL TURNERO
+        </a>
+
         <div className="mt-6 bg-[#F6F5F2] rounded-[16px] p-3 text-center">
           <p className="text-[9px] font-bold text-zinc-500 tracking-widest"> • SOPORTE: Lacroix Dev •</p>
         </div>
